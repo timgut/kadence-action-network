@@ -71,6 +71,99 @@
                 return 'Please enter a valid phone number.';
             }
             return null;
+        },
+
+        url: function(value, fieldName) {
+            // Check if field is required
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            const isRequired = field && (field.hasAttribute('required') || field.getAttribute('data-original-required') === 'true');
+            
+            if (!value || value.trim() === '') {
+                if (isRequired) {
+                    return 'This field is required.';
+                }
+                return null; // Not required, so empty is OK
+            }
+            
+            try {
+                new URL(value);
+                return null;
+            } catch (e) {
+                return 'Please enter a valid URL.';
+            }
+        },
+
+        number: function(value, fieldName) {
+            // Check if field is required
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            const isRequired = field && (field.hasAttribute('required') || field.getAttribute('data-original-required') === 'true');
+            
+            if (!value || value.trim() === '') {
+                if (isRequired) {
+                    return 'This field is required.';
+                }
+                return null; // Not required, so empty is OK
+            }
+            
+            if (isNaN(value) || value === '') {
+                return 'Please enter a valid number.';
+            }
+            return null;
+        },
+
+        min_length: function(value, fieldName, minLength = 3) {
+            // Check if field is required
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            const isRequired = field && (field.hasAttribute('required') || field.getAttribute('data-original-required') === 'true');
+            
+            if (!value || value.trim() === '') {
+                if (isRequired) {
+                    return 'This field is required.';
+                }
+                return null; // Not required, so empty is OK
+            }
+            
+            if (value.length < minLength) {
+                return `This field must be at least ${minLength} characters long.`;
+            }
+            return null;
+        },
+
+        max_length: function(value, fieldName, maxLength = 255) {
+            // Check if field is required
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            const isRequired = field && (field.hasAttribute('required') || field.getAttribute('data-original-required') === 'true');
+            
+            if (!value || value.trim() === '') {
+                if (isRequired) {
+                    return 'This field is required.';
+                }
+                return null; // Not required, so empty is OK
+            }
+            
+            if (value.length > maxLength) {
+                return `This field cannot exceed ${maxLength} characters.`;
+            }
+            return null;
+        },
+
+        date: function(value, fieldName) {
+            // Check if field is required
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            const isRequired = field && (field.hasAttribute('required') || field.getAttribute('data-original-required') === 'true');
+            
+            if (!value || value.trim() === '') {
+                if (isRequired) {
+                    return 'This field is required.';
+                }
+                return null; // Not required, so empty is OK
+            }
+            
+            const date = new Date(value);
+            if (isNaN(date.getTime())) {
+                return 'Please enter a valid date.';
+            }
+            return null;
         }
     };
 
@@ -96,35 +189,21 @@
         }
 
         loadCustomValidators() {
-            console.log('loadCustomValidators called');
-            console.log('this.customValidationCode:', this.customValidationCode);
-            console.log('this.customValidationCode length:', this.customValidationCode ? this.customValidationCode.length : 0);
-            
             if (this.customValidationCode) {
                 try {
-                    console.log('Loading custom validation code:', this.customValidationCode);
-                    
                     // Extract function name from the code
                     const functionMatch = this.customValidationCode.match(/function\s+(\w+)\s*\(/);
                     if (functionMatch) {
                         const functionName = functionMatch[1];
-                        console.log('Found function name:', functionName);
                         
                         // Create the function in global scope
                         const functionCode = this.customValidationCode.replace(/^function\s+\w+\s*\(/, 'function(');
                         const globalFunction = new Function('return ' + functionCode);
                         window[functionName] = globalFunction();
-                        
-                        console.log('Function added to window:', functionName);
                     }
-                    
-                    console.log('Custom validators loaded for form:', this.formId);
-                    console.log('Available validate functions:', Object.keys(window).filter(key => key.startsWith('validate')));
                 } catch (error) {
                     console.error('Error loading custom validators:', error);
                 }
-            } else {
-                console.log('No custom validation code to load');
             }
         }
 
@@ -151,41 +230,24 @@
             }
             
             if (!form) {
-                console.log('Form not found with any selector for ID:', this.formId);
-                console.log('Tried selectors:', [
-                    `[data-form-id="${this.formId}"]`,
-                    `#kb-adv-form-${this.formId}-cpt-id`,
-                    `.kb-advanced-form[id*="${this.formId}"]`,
-                    `form input[name="post_id"][value="${this.formId}"]`
-                ]);
                 return;
             }
-            
-            console.log('Found form for validation:', form);
-            console.log('Form HTML:', form.outerHTML.substring(0, 500) + '...');
 
             // Remove HTML5 validation attributes temporarily
             this.removeHTML5Validation(form);
 
             // Simple approach: Just override the submit button click
             const submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
-            console.log('Found submit buttons:', submitButtons.length);
             
             submitButtons.forEach(button => {
-                console.log('Attaching click handler to button:', button);
-                
                 button.addEventListener('click', (e) => {
-                    console.log('BUTTON: Submit button clicked, validating first');
-                    
                     if (!this.validateForm()) {
-                        console.log('BUTTON: Validation failed, preventing submission');
                         e.preventDefault();
                         e.stopPropagation();
                         e.stopImmediatePropagation();
                         this.displayErrors();
                         return false;
                     } else {
-                        console.log('BUTTON: Validation passed, allowing submission');
                         // Restore HTML5 validation
                         this.restoreHTML5Validation(form);
                         // Let the original submission proceed
@@ -193,21 +255,15 @@
                     }
                 }, true);
             });
-            
-            console.log('Form submission override installed for form:', this.formId);
         }
 
         removeHTML5Validation(form) {
-            console.log('Removing HTML5 validation from form');
             const fields = form.querySelectorAll('input, select, textarea');
-            console.log('Found', fields.length, 'form fields');
             
             fields.forEach(field => {
                 const originalType = field.getAttribute('type') || 'text';
                 const originalRequired = field.hasAttribute('required');
                 const originalPattern = field.getAttribute('pattern');
-                
-                console.log('Field:', field.name, 'Type:', originalType, 'Required:', originalRequired, 'Pattern:', originalPattern);
                 
                 field.removeAttribute('required');
                 field.removeAttribute('pattern');
@@ -220,8 +276,6 @@
                 // Also remove novalidate from form to prevent HTML5 validation
                 form.setAttribute('novalidate', 'novalidate');
             });
-            
-            console.log('HTML5 validation attributes removed');
         }
 
         restoreHTML5Validation(form) {
@@ -264,17 +318,11 @@
             }
             
             if (!form) {
-                console.log('validateForm: Form not found');
                 return true;
             }
-            
-            console.log('validateForm: Found form, validation settings:', this.validationSettings);
-            console.log('validateForm: Form fields:', form.querySelectorAll('input, select, textarea'));
 
             // Validate each configured field
             Object.keys(this.validationSettings).forEach(fieldName => {
-                console.log('validateForm: Checking field:', fieldName);
-                
                 // Try multiple selectors for the field
                 let field = form.querySelector(`[name="${fieldName}"]`);
                 if (!field) {
@@ -288,19 +336,16 @@
                 }
                 
                 if (!field) {
-                    console.log('validateForm: Field not found:', fieldName);
                     return;
                 }
-                
-                console.log('validateForm: Found field:', fieldName, 'Value:', field.value);
 
                 const value = field.value;
                 const validationType = this.validationSettings[fieldName].validation_type;
                 const customErrorMessage = this.validationSettings[fieldName].error_message;
+                const validationParam = this.validationSettings[fieldName].validation_param; // Get validation parameter
 
                 // Run validation
-                let error = this.runValidation(value, fieldName, validationType);
-                console.log('validateForm: Validation result for', fieldName, ':', error);
+                let error = this.runValidation(value, fieldName, validationType, validationParam);
                 
                 // Use custom error message if provided
                 if (error && customErrorMessage) {
@@ -313,40 +358,34 @@
                         message: error,
                         fieldName: fieldName
                     });
-                    console.log('validateForm: Added error for', fieldName, ':', error);
                 }
             });
 
-            console.log('validateForm: Total errors:', this.errors.length);
             return this.errors.length === 0;
         }
 
-        runValidation(value, fieldName, validationType) {
-            console.log('runValidation called:', { value, fieldName, validationType });
-            
+        runValidation(value, fieldName, validationType, validationParam = null) {
             // Check if it's a built-in validator
             if (Validators[validationType]) {
-                console.log('Using built-in validator:', validationType);
+                // Handle validators that accept parameters
+                if (validationType === 'min_length' && validationParam) {
+                    return Validators[validationType](value, fieldName, parseInt(validationParam));
+                }
+                if (validationType === 'max_length' && validationParam) {
+                    return Validators[validationType](value, fieldName, parseInt(validationParam));
+                }
                 return Validators[validationType](value, fieldName);
             }
 
             // Check if it's a custom validator
             if (validationType === 'custom') {
                 const customValidatorName = `validate${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`;
-                console.log('Looking for custom validator:', customValidatorName);
-                console.log('Available global functions:', Object.keys(window).filter(key => key.startsWith('validate')));
                 
                 if (typeof window[customValidatorName] === 'function') {
-                    console.log('Found custom validator function:', customValidatorName);
-                    const result = window[customValidatorName](value, fieldName);
-                    console.log('Custom validator result:', result);
-                    return result;
-                } else {
-                    console.log('Custom validator function not found:', customValidatorName);
+                    return window[customValidatorName](value, fieldName);
                 }
             }
 
-            console.log('No validator found, returning null');
             return null;
         }
 
@@ -381,8 +420,6 @@
 
             // Insert error message after field
             field.parentNode.insertBefore(errorElement, field.nextSibling);
-            
-            console.log('Showed error for field:', field.name, 'Message:', message);
         }
 
         clearErrors() {
@@ -433,8 +470,9 @@
             const value = field.value;
             const validationType = this.validationSettings[fieldName].validation_type;
             const customErrorMessage = this.validationSettings[fieldName].error_message;
+            const validationParam = this.validationSettings[fieldName].validation_param; // Get validation parameter
 
-            let error = this.runValidation(value, fieldName, validationType);
+            let error = this.runValidation(value, fieldName, validationType, validationParam);
             
             if (error && customErrorMessage) {
                 error = customErrorMessage;
@@ -450,7 +488,8 @@
         isFieldValid(field, fieldName) {
             const value = field.value;
             const validationType = this.validationSettings[fieldName].validation_type;
-            const error = this.runValidation(value, fieldName, validationType);
+            const validationParam = this.validationSettings[fieldName].validation_param; // Get validation parameter
+            const error = this.runValidation(value, fieldName, validationType, validationParam);
             return !error;
         }
 
@@ -464,49 +503,33 @@
             errorElements.forEach(errorElement => {
                 errorElement.remove();
             });
-            
-            console.log('Cleared error for field:', field.name);
         }
     }
 
     // Initialize validation when DOM is ready
     function initValidation() {
-        console.log('Kadence AN Validation: DOM ready');
-        console.log('Available validation settings:', window.kadenceANValidationSettings);
-        
         // Look for forms with validation settings
         document.querySelectorAll('[data-form-id]').forEach(element => {
             const formId = element.dataset.formId;
-            console.log('Found form with data-form-id:', formId);
             
             // Check if this form has validation settings
             if (window.kadenceANValidationSettings && window.kadenceANValidationSettings[formId]) {
-                console.log('Initializing validation for form:', formId);
                 const settings = window.kadenceANValidationSettings[formId];
-                console.log('Form validation settings:', settings);
                 new KadenceFormValidator(formId, settings.validation, settings.custom);
-            } else {
-                console.log('No validation settings found for form:', formId);
             }
         });
         
         // Look for Kadence forms by their ID pattern
         document.querySelectorAll('.kb-advanced-form').forEach(element => {
             const formId = element.id;
-            console.log('Found Kadence form with ID:', formId);
             
             // Extract form ID from Kadence's ID format: kb-adv-form-{formId}-cpt-id
             if (formId && formId.match(/kb-adv-form-(\d+)-cpt-id/)) {
                 const extractedFormId = formId.match(/kb-adv-form-(\d+)-cpt-id/)[1];
-                console.log('Extracted form ID from Kadence form:', extractedFormId);
                 
                 if (window.kadenceANValidationSettings && window.kadenceANValidationSettings[extractedFormId]) {
-                    console.log('Initializing validation for Kadence form:', extractedFormId);
                     const settings = window.kadenceANValidationSettings[extractedFormId];
-                    console.log('Form validation settings:', settings);
                     new KadenceFormValidator(extractedFormId, settings.validation, settings.custom);
-                } else {
-                    console.log('No validation settings found for Kadence form:', extractedFormId);
                 }
             }
         });

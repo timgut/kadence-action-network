@@ -1,8 +1,11 @@
 <?php
 /*
 Plugin Name: Kadence Action Network Integration
-Description: Sends Kadence Blocks Pro form submissions to Action Network via their REST API.
-Version:0.10thor: Tim Gutowski
+Description: Sends Kadence Blocks Pro form submissions to Action Network via their REST API with advanced validation capabilities.
+Version: 1.0.0
+Author: Tim Gutowski
+License: GPL v2 or later
+Text Domain: kadence-action-network
 */
 
 // Exit if accessed directly
@@ -11,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 // Define plugin constants
 define( 'KADENCE_AN_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'KADENCE_AN_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-defined( 'KADENCE_AN_VERSION' ) or define( 'KADENCE_AN_VERSION', '0.1.0' );
+defined( 'KADENCE_AN_VERSION' ) or define( 'KADENCE_AN_VERSION', '1.0.0' );
 
 // Activation hook
 register_activation_hook( __FILE__, 'kadence_an_activate_plugin' );
@@ -22,6 +25,22 @@ function kadence_an_activate_plugin() {
 // Include admin settings page
 if ( is_admin() ) {
     require_once KADENCE_AN_PLUGIN_PATH . 'admin-settings.php';
+    
+    // Enqueue admin styles
+    add_action('admin_enqueue_scripts', 'kadence_an_enqueue_admin_styles');
+}
+
+function kadence_an_enqueue_admin_styles($hook) {
+    // Only load on kadence_form post type
+    global $post_type;
+    if ($post_type === 'kadence_form' || strpos($hook, 'kadence') !== false) {
+        wp_enqueue_style(
+            'kadence-an-admin',
+            KADENCE_AN_PLUGIN_URL . 'css/admin-style.css',
+            array(),
+            KADENCE_AN_VERSION
+        );
+    }
 }
 
 // Enqueue validation JavaScript
@@ -59,6 +78,7 @@ function kadence_an_get_validation_settings() {
             foreach ($validation_settings as $field) {
                 $validation_rules[$field['field_name']] = array(
                     'validation_type' => $field['validation_type'],
+                    'validation_param' => $field['validation_param'] ?? '',
                     'error_message' => $field['error_message']
                 );
             }
@@ -109,73 +129,85 @@ function kadence_an_render_settings_metabox($post) {
     wp_nonce_field('kadence_an_save_settings', 'kadence_an_settings_nonce');
     ?>
     
-    <!-- Action Network Settings -->
-    <h4>Action Network Configuration</h4>
-    <p><label for="kadence_an_endpoint"><strong>AN Endpoint URL</strong></label><br />
-    <input type="text" name="kadence_an_endpoint" id="kadence_an_endpoint" value="<?php echo esc_attr($endpoint); ?>" style="width:100%" /></p>
-    
-    <p><label for="kadence_an_tags"><strong>Tags (comma-separated)</strong></label><br />
-    <input type="text" name="kadence_an_tags" id="kadence_an_tags" value="<?php echo esc_attr($tags); ?>" style="width:100%" /></p>
-    
-    <p><label for="kadence_an_management_url"><strong>Action Network Form Management URL</strong></label><br />
-    <input type="text" name="kadence_an_management_url" id="kadence_an_management_url" value="<?php echo esc_attr($management_url); ?>" style="width:100%" placeholder="https://actionnetwork.org/forms/your-form-id" /></p>
-    <p><em>This URL is for administrative reference only and will not be used in API requests.</em></p>
-    
-    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
-    
-    <!-- Validation Settings -->
-    <h4>Form Validation Settings</h4>
-    <p><em>Configure custom validation for form fields. Leave empty to use Kadence's default HTML validation.</em></p>
-    
-    <!-- Field Validation Mapping -->
-    <div id="field-validation-mapping">
-        <h5>Field Validation Rules</h5>
-        <p><em>Map form fields to validation types. Field names should match your Kadence form field IDs.</em></p>
+    <div class="kadence-an-meta-box">
+        <!-- Action Network Settings -->
+        <h4>Action Network Configuration</h4>
+        <p><label for="kadence_an_endpoint"><strong>AN Endpoint URL</strong></label><br />
+        <input type="text" name="kadence_an_endpoint" id="kadence_an_endpoint" value="<?php echo esc_attr($endpoint); ?>" style="width:100%" /></p>
         
-        <div id="validation-fields">
-            <?php
-            if (!empty($validation_settings)) {
-                foreach ($validation_settings as $index => $field) {
-                    ?>
-                    <div class="validation-field-row" style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
-                        <label><strong>Field Name:</strong></label><br>
-                        <input type="text" name="validation_settings[<?php echo $index; ?>][field_name]" value="<?php echo esc_attr($field['field_name']); ?>" style="width: 100%; margin-bottom: 5px;" placeholder="e.g., email, phone, zip_code" />
-                        
-                        <label><strong>Validation Type:</strong></label><br>
-                        <select name="validation_settings[<?php echo $index; ?>][validation_type]" style="width: 100%; margin-bottom: 5px;">
-                            <option value="">Use HTML5 validation</option>
-                            <option value="required" <?php selected($field['validation_type'], 'required'); ?>>Required field</option>
-                            <option value="email" <?php selected($field['validation_type'], 'email'); ?>>Email format</option>
-                            <option value="us_zip" <?php selected($field['validation_type'], 'us_zip'); ?>>US ZIP code</option>
-                            <option value="phone" <?php selected($field['validation_type'], 'phone'); ?>>Phone number</option>
-                            <option value="custom" <?php selected($field['validation_type'], 'custom'); ?>>Custom function</option>
-                        </select>
-                        
-                        <label><strong>Error Message:</strong></label><br>
-                        <input type="text" name="validation_settings[<?php echo $index; ?>][error_message]" value="<?php echo esc_attr($field['error_message']); ?>" style="width: 100%; margin-bottom: 5px;" placeholder="Custom error message (optional)" />
-                        
-                        <button type="button" class="button remove-validation-field" style="background: #dc3232; color: white; border: none;">Remove Field</button>
-                    </div>
-                    <?php
-                }
-            }
-            ?>
-        </div>
+        <p><label for="kadence_an_tags"><strong>Tags (comma-separated)</strong></label><br />
+        <input type="text" name="kadence_an_tags" id="kadence_an_tags" value="<?php echo esc_attr($tags); ?>" style="width:100%" /></p>
         
-        <button type="button" class="button" id="add-validation-field">Add Field Validation Rule</button>
+        <p><label for="kadence_an_management_url"><strong>Action Network Form Management URL</strong></label><br />
+        <input type="text" name="kadence_an_management_url" id="kadence_an_management_url" value="<?php echo esc_attr($management_url); ?>" style="width:100%" placeholder="https://actionnetwork.org/forms/your-form-id" />
+        <span class="kadence-an-help-text">This URL is for administrative reference only and will not be used in API requests.</span></p>
     </div>
     
-    <!-- Custom Validation Functions -->
-    <div style="margin-top: 20px;">
-        <h5>Custom Validation Functions</h5>
-        <p><em>Define custom JavaScript validation functions. Use 'custom' validation type above to reference these functions.</em></p>
-        <textarea name="kadence_an_custom_validation" id="kadence_an_custom_validation" rows="8" style="width: 100%; font-family: monospace;" placeholder="// Example custom validation function:
+    <hr class="kadence-an-divider">
+    
+    <div class="kadence-an-meta-box">
+        <!-- Validation Settings -->
+        <h4>Form Validation Settings</h4>
+        <p class="kadence-an-help-text">Configure custom validation for form fields. Leave empty to use Kadence's default HTML validation.</p>
+        
+        <!-- Field Validation Mapping -->
+        <div id="field-validation-mapping">
+            <h5>Field Validation Rules</h5>
+            <p class="kadence-an-help-text">Map form fields to validation types. Field names should match your Kadence form field IDs.</p>
+            
+            <div id="validation-fields">
+                <?php
+                if (!empty($validation_settings)) {
+                    foreach ($validation_settings as $index => $field) {
+                        ?>
+                        <div class="validation-field-row">
+                            <label><strong>Field Name:</strong></label><br>
+                            <input type="text" name="validation_settings[<?php echo $index; ?>][field_name]" value="<?php echo esc_attr($field['field_name']); ?>" style="width: 100%; margin-bottom: 5px;" placeholder="e.g., email, phone, zip_code" />
+                            
+                            <label><strong>Validation Type:</strong></label><br>
+                            <select name="validation_settings[<?php echo $index; ?>][validation_type]" style="width: 100%; margin-bottom: 5px;">
+                                <option value="">Use HTML5 validation</option>
+                                <option value="required" <?php selected($field['validation_type'], 'required'); ?>>Required field</option>
+                                <option value="email" <?php selected($field['validation_type'], 'email'); ?>>Email format</option>
+                                <option value="us_zip" <?php selected($field['validation_type'], 'us_zip'); ?>>US ZIP code</option>
+                                <option value="phone" <?php selected($field['validation_type'], 'phone'); ?>>Phone number</option>
+                                <option value="url" <?php selected($field['validation_type'], 'url'); ?>>URL format</option>
+                                <option value="number" <?php selected($field['validation_type'], 'number'); ?>>Number</option>
+                                <option value="min_length" <?php selected($field['validation_type'], 'min_length'); ?>>Minimum length</option>
+                                <option value="max_length" <?php selected($field['validation_type'], 'max_length'); ?>>Maximum length</option>
+                                <option value="date" <?php selected($field['validation_type'], 'date'); ?>>Date</option>
+                                <option value="custom" <?php selected($field['validation_type'], 'custom'); ?>>Custom function</option>
+                            </select>
+                            
+                            <label><strong>Validation Parameter:</strong></label><br>
+                            <input type="text" name="validation_settings[<?php echo $index; ?>][validation_param]" value="<?php echo esc_attr($field['validation_param'] ?? ''); ?>" style="width: 100%; margin-bottom: 5px;" placeholder="e.g., 10 for min_length, 255 for max_length" />
+                            
+                            <label><strong>Error Message:</strong></label><br>
+                            <input type="text" name="validation_settings[<?php echo $index; ?>][error_message]" value="<?php echo esc_attr($field['error_message']); ?>" style="width: 100%; margin-bottom: 5px;" placeholder="Custom error message (optional)" />
+                            
+                            <button type="button" class="button remove-validation-field">Remove Field</button>
+                        </div>
+                        <?php
+                    }
+                }
+                ?>
+            </div>
+            
+            <button type="button" class="button" id="add-validation-field">Add Field Validation Rule</button>
+        </div>
+        
+        <!-- Custom Validation Functions -->
+        <div style="margin-top: 20px;">
+            <h5>Custom Validation Functions</h5>
+            <p class="kadence-an-help-text">Define custom JavaScript validation functions. Use 'custom' validation type above to reference these functions.</p>
+            <textarea name="kadence_an_custom_validation" id="kadence_an_custom_validation" rows="8" style="width: 100%; font-family: monospace;" placeholder="// Example custom validation function:
 function validateCustomField(value, fieldName) {
     if (value.length < 5) {
         return 'Field must be at least 5 characters long';
     }
     return null; // Return null if validation passes
 }"><?php echo esc_textarea($custom_validation); ?></textarea>
+        </div>
     </div>
     
     <script>
@@ -183,7 +215,7 @@ function validateCustomField(value, fieldName) {
         var fieldIndex = <?php echo !empty($validation_settings) ? max(array_keys($validation_settings)) + 1 : 0; ?>;
         
         $('#add-validation-field').click(function() {
-            var fieldHtml = '<div class="validation-field-row" style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">' +
+            var fieldHtml = '<div class="validation-field-row">' +
                 '<label><strong>Field Name:</strong></label><br>' +
                 '<input type="text" name="validation_settings[' + fieldIndex + '][field_name]" style="width: 100%; margin-bottom: 5px;" placeholder="e.g., email, phone, zip_code" />' +
                 '<label><strong>Validation Type:</strong></label><br>' +
@@ -193,11 +225,18 @@ function validateCustomField(value, fieldName) {
                 '<option value="email">Email format</option>' +
                 '<option value="us_zip">US ZIP code</option>' +
                 '<option value="phone">Phone number</option>' +
+                '<option value="url">URL format</option>' +
+                '<option value="number">Number</option>' +
+                '<option value="min_length">Minimum length</option>' +
+                '<option value="max_length">Maximum length</option>' +
+                '<option value="date">Date</option>' +
                 '<option value="custom">Custom function</option>' +
                 '</select>' +
+                '<label><strong>Validation Parameter:</strong></label><br>' +
+                '<input type="text" name="validation_settings[' + fieldIndex + '][validation_param]" style="width: 100%; margin-bottom: 5px;" placeholder="e.g., 10 for min_length, 255 for max_length" />' +
                 '<label><strong>Error Message:</strong></label><br>' +
                 '<input type="text" name="validation_settings[' + fieldIndex + '][error_message]" style="width: 100%; margin-bottom: 5px;" placeholder="Custom error message (optional)" />' +
-                '<button type="button" class="button remove-validation-field" style="background: #dc3232; color: white; border: none;">Remove Field</button>' +
+                '<button type="button" class="button remove-validation-field">Remove Field</button>' +
                 '</div>';
             
             $('#validation-fields').append(fieldHtml);
@@ -213,44 +252,33 @@ function validateCustomField(value, fieldName) {
 }
 
 add_action('save_post_kadence_form', function($post_id) {
-    kadence_an_log('save_post_kadence_form triggered for post_id: ' . $post_id);
-    
     // Only check nonce if we have POST data (first save)
     if (!empty($_POST) && (!isset($_POST['kadence_an_settings_nonce']) || !wp_verify_nonce($_POST['kadence_an_settings_nonce'], 'kadence_an_save_settings'))) {
-        kadence_an_log('Nonce verification failed or nonce not set');
         return;
     }
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-        kadence_an_log('Autosave detected, skipping save');
         return;
     }
     if (!current_user_can('edit_post', $post_id)) {
-        kadence_an_log('User does not have permission to edit post');
         return;
     }
     
     // Only save if we have POST data (first save)
     if (empty($_POST)) {
-        kadence_an_log('No POST data, skipping meta box save');
         return;
     }
-    
-    kadence_an_log('Saving meta box data for post_id: ' . $post_id);
     
     if (isset($_POST['kadence_an_endpoint'])) {
         $endpoint = sanitize_text_field($_POST['kadence_an_endpoint']);
         update_post_meta($post_id, '_kadence_an_endpoint', $endpoint);
-        kadence_an_log('Saved endpoint: ' . $endpoint);
     }
     if (isset($_POST['kadence_an_tags'])) {
         $tags = sanitize_text_field($_POST['kadence_an_tags']);
         update_post_meta($post_id, '_kadence_an_tags', $tags);
-        kadence_an_log('Saved tags: ' . $tags);
     }
     if (isset($_POST['kadence_an_management_url'])) {
         $management_url = sanitize_text_field($_POST['kadence_an_management_url']);
         update_post_meta($post_id, '_kadence_an_management_url', $management_url);
-        kadence_an_log('Saved management URL: ' . $management_url);
     }
     
     // Save validation settings
@@ -261,12 +289,12 @@ add_action('save_post_kadence_form', function($post_id) {
                 $validation_settings[] = array(
                     'field_name' => sanitize_text_field($field['field_name']),
                     'validation_type' => sanitize_text_field($field['validation_type']),
+                    'validation_param' => sanitize_text_field($field['validation_param'] ?? ''),
                     'error_message' => sanitize_text_field($field['error_message'])
                 );
             }
         }
         update_post_meta($post_id, '_kadence_an_validation_settings', $validation_settings);
-        kadence_an_log('Saved validation settings: ' . count($validation_settings) . ' rules');
     }
     
     // Save custom validation functions
@@ -274,10 +302,7 @@ add_action('save_post_kadence_form', function($post_id) {
         // Preserve JavaScript syntax by using raw input
         $custom_validation = $_POST['kadence_an_custom_validation'];
         update_post_meta($post_id, '_kadence_an_custom_validation', $custom_validation);
-        kadence_an_log('Saved custom validation functions');
     }
-    
-    kadence_an_log('Meta box save completed');
 });
 
 // Simple file logger for debugging
@@ -303,9 +328,6 @@ function kadence_an_handle_form_submission( $request ) {
     if ( empty( $params ) ) {
         // Try to get params from form data (application/x-www-form-urlencoded or multipart/form-data)
         $params = $request->get_body_params();
-        if (!empty($params)) {
-            kadence_an_log('Received form-encoded submission: ' . print_r($params, true));
-        }
     }
     if ( empty( $params ) ) {
         kadence_an_log('No data received in submission.');
@@ -322,11 +344,9 @@ function kadence_an_handle_form_submission( $request ) {
         }
     }
     if (!$endpoint) {
-        kadence_an_log('The form with ID ' . $form_id . 'does not have an endpoint, so data cannot be sent to AN.');
+        kadence_an_log('The form with ID ' . $form_id . ' does not have an endpoint, so data cannot be sent to AN.');
+        return new WP_Error( 'no_endpoint', 'No Action Network endpoint configured for this form', array( 'status' => 400 ) );
     }
-
-    // Log the endpoint being used
-    kadence_an_log('Using AN endpoint: ' . $endpoint);
 
     // Get API key from WordPress options
     $api_key = get_option('kadence_an_api_key');
@@ -375,8 +395,6 @@ function kadence_an_handle_form_submission( $request ) {
         'add_tags' => $tags,
     );
 
-    kadence_an_log('Sending to AN: ' . json_encode($payload));
-
     $response = wp_remote_post( $endpoint, array(
         'headers' => array(
             'Content-Type' => 'application/json',
@@ -393,13 +411,11 @@ function kadence_an_handle_form_submission( $request ) {
 
     $code = wp_remote_retrieve_response_code( $response );
     $body = wp_remote_retrieve_body( $response );
-    kadence_an_log("AN response ($code): $body");
+    
     if ( $code < 200 || $code >= 300 ) {
+        kadence_an_log("AN API error ($code): $body");
         return new WP_Error( 'an_api_error', $body, array( 'status' => $code ) );
     }
 
-    return array(
-        'success' => true,
-        'response' => json_decode($body, true),
-    );
+    return new WP_REST_Response( array( 'success' => true ), 200 );
 }

@@ -1,0 +1,164 @@
+/* Kadence Action Network Integration Admin Styles */
+
+.kadence-an-meta-box {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.kadence-an-meta-box h4 {
+    margin-top: 0;
+    color: #23282d;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 8px;
+}
+
+.kadence-an-meta-box h5 {
+    color: #23282d;
+    margin-bottom: 10px;
+}
+
+.kadence-an-meta-box label {
+    font-weight: 600;
+    color: #23282d;
+}
+
+.kadence-an-meta-box input[type="text"],
+.kadence-an-meta-box textarea,
+.kadence-an-meta-box select {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 8px;
+    margin-bottom: 10px;
+}
+
+.kadence-an-meta-box input[type="text"]:focus,
+.kadence-an-meta-box textarea:focus,
+.kadence-an-meta-box select:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+    outline: none;
+}
+
+.validation-field-row {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.validation-field-row:hover {
+    border-color: #0073aa;
+}
+
+.remove-validation-field {
+    background: #dc3232 !important;
+    color: white !important;
+    border: none !important;
+    padding: 5px 10px !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+}
+
+.remove-validation-field:hover {
+    background: #c92626 !important;
+}
+
+#add-validation-field {
+    background: #0073aa !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 15px !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+}
+
+#add-validation-field:hover {
+    background: #005a87 !important;
+}
+
+.kadence-an-help-text {
+    color: #666;
+    font-style: italic;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.kadence-an-divider {
+    border: 0;
+    border-top: 1px solid #ddd;
+    margin: 20px 0;
+}
+
+/* Settings page styles */
+.kadence-an-settings-page {
+    max-width: 800px;
+    margin: 20px 0;
+}
+
+.kadence-an-settings-page h2 {
+    color: #23282d;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 10px;
+}
+
+.kadence-an-settings-page .form-table th {
+    width: 200px;
+    padding: 20px 10px 20px 0;
+}
+
+.kadence-an-settings-page .form-table td {
+    padding: 15px 10px;
+}
+
+.kadence-an-settings-page input[type="text"] {
+    width: 400px;
+}
+
+/* Success/Error messages */
+.kadence-an-notice {
+    padding: 10px 15px;
+    margin: 15px 0;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.kadence-an-notice.success {
+    background: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}
+
+.kadence-an-notice.error {
+    background: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+}
+
+.kadence-an-notice.warning {
+    background: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+}
+
+/* Responsive design */
+@media (max-width: 782px) {
+    .kadence-an-meta-box {
+        padding: 10px;
+    }
+    
+    .validation-field-row {
+        padding: 10px;
+    }
+    
+    .kadence-an-settings-page input[type="text"] {
+        width: 100%;
+    }
+} 
