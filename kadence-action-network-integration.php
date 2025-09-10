@@ -2,7 +2,7 @@
 /*
 Plugin Name: Kadence Action Network Integration
 Description: Sends Kadence Blocks Pro form submissions to Action Network via their REST API with advanced validation capabilities.
-Version: 1.1.0
+Version: 1.1.1
 Author: Tim Gutowski
 License: GPL v2 or later
 Text Domain: kadence-action-network
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 // Define plugin constants
 define( 'KADENCE_AN_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'KADENCE_AN_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-defined( 'KADENCE_AN_VERSION' ) or define( 'KADENCE_AN_VERSION', '1.1.0' );
+defined( 'KADENCE_AN_VERSION' ) or define( 'KADENCE_AN_VERSION', '1.1.1' );
 define( 'KADENCE_AN_GITHUB_REPO', 'your-username/kadence-action-network-integration' ); // Replace with your actual GitHub repo
 
 // Simple GitHub Update Checker Class
@@ -404,8 +404,11 @@ function validateCustomField(value, fieldName) {
 }
 
 add_action('save_post_kadence_form', function($post_id) {
+    kadence_an_log("save_post_kadence_form triggered for post_id: $post_id");
+    
     // Only check nonce if we have POST data (first save)
     if (!empty($_POST) && (!isset($_POST['kadence_an_settings_nonce']) || !wp_verify_nonce($_POST['kadence_an_settings_nonce'], 'kadence_an_save_settings'))) {
+        kadence_an_log('Nonce verification failed or nonce not set');
         return;
     }
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
@@ -417,20 +420,26 @@ add_action('save_post_kadence_form', function($post_id) {
     
     // Only save if we have POST data (first save)
     if (empty($_POST)) {
+        kadence_an_log('No POST data, skipping meta box save');
         return;
     }
+    
+    kadence_an_log('Saving meta box data for post_id: ' . $post_id);
     
     if (isset($_POST['kadence_an_endpoint'])) {
         $endpoint = sanitize_text_field($_POST['kadence_an_endpoint']);
         update_post_meta($post_id, '_kadence_an_endpoint', $endpoint);
+        kadence_an_log('Saved endpoint: ' . $endpoint);
     }
     if (isset($_POST['kadence_an_tags'])) {
         $tags = sanitize_text_field($_POST['kadence_an_tags']);
         update_post_meta($post_id, '_kadence_an_tags', $tags);
+        kadence_an_log('Saved tags: ' . $tags);
     }
     if (isset($_POST['kadence_an_management_url'])) {
         $management_url = sanitize_text_field($_POST['kadence_an_management_url']);
         update_post_meta($post_id, '_kadence_an_management_url', $management_url);
+        kadence_an_log('Saved management URL: ' . $management_url);
     }
     
     // Save validation settings
@@ -447,6 +456,7 @@ add_action('save_post_kadence_form', function($post_id) {
             }
         }
         update_post_meta($post_id, '_kadence_an_validation_settings', $validation_settings);
+        kadence_an_log('Saved validation settings: ' . count($validation_settings) . ' rules');
     }
     
     // Save custom validation functions
@@ -454,7 +464,10 @@ add_action('save_post_kadence_form', function($post_id) {
         // Preserve JavaScript syntax by using raw input
         $custom_validation = $_POST['kadence_an_custom_validation'];
         update_post_meta($post_id, '_kadence_an_custom_validation', $custom_validation);
+        kadence_an_log('Saved custom validation functions');
     }
+    
+    kadence_an_log('Meta box save completed');
 });
 
 // Simple file logger for debugging
@@ -490,6 +503,9 @@ function kadence_an_handle_form_submission( $request ) {
         kadence_an_log('No data received in submission.');
         return new WP_Error( 'no_data', 'No data received', array( 'status' => 400 ) );
     }
+    
+    // Log the received submission data
+    kadence_an_log('Received form-encoded submission: ' . print_r($params, true));
     // Try to get form ID from params
     $form_id = $params['post_id']; // ?? $params['_kb_adv_form_post_id'] ?? $params['post_id'] ?? null;
     // Always get endpoint from post meta, not from params
@@ -504,6 +520,8 @@ function kadence_an_handle_form_submission( $request ) {
         kadence_an_log('The form with ID ' . $form_id . ' does not have an endpoint, so data cannot be sent to AN.');
         return new WP_Error( 'no_endpoint', 'No Action Network endpoint configured for this form', array( 'status' => 400 ) );
     }
+    
+    kadence_an_log('Using AN endpoint: ' . $endpoint);
 
     // Automatically append "/submissions" to the endpoint if not already present
     if (!str_ends_with($endpoint, '/submissions')) {
@@ -557,6 +575,8 @@ function kadence_an_handle_form_submission( $request ) {
         'add_tags' => $tags,
     );
 
+    kadence_an_log('Sending to AN: ' . wp_json_encode($payload));
+
     $response = wp_remote_post( $endpoint, array(
         'headers' => array(
             'Content-Type' => 'application/json',
@@ -579,5 +599,6 @@ function kadence_an_handle_form_submission( $request ) {
         return new WP_Error( 'an_api_error', $body, array( 'status' => $code ) );
     }
 
+    kadence_an_log("AN response ($code): $body");
     return new WP_REST_Response( array( 'success' => true ), 200 );
 }

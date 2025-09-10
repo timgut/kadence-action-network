@@ -471,3 +471,41 @@
 [2025-08-06 22:13:28] Saved validation settings: 6 rules
 [2025-08-06 22:13:28] Saved custom validation functions
 [2025-08-06 22:13:28] Meta box save completed
+[2025-09-10 18:18:57] save_post_kadence_form triggered for post_id: 1581
+[2025-09-10 18:18:57] No POST data, skipping meta box save
+[2025-09-10 18:18:58] save_post_kadence_form triggered for post_id: 1581
+[2025-09-10 18:18:58] Saving meta box data for post_id: 1581
+[2025-09-10 18:18:58] Saved endpoint: https://actionnetwork.org/api/v2/forms/d1aabbb6-3369-4349-a34b-d96e89fe7a1b/submissions
+[2025-09-10 18:18:58] Saved tags: 
+[2025-09-10 18:18:58] Saved management URL: https://actionnetwork.org/forms/join-us-join-afscme/manage
+[2025-09-10 18:18:58] Saved custom validation functions
+[2025-09-10 18:18:58] Meta box save completed
+[2025-09-10 18:47:36] Received form-encoded submission: Array
+(
+    [post_name] => Join Our Union
+    [post_url] => http://localhost:10079/join/join-your-union-kadence-form/
+    [post_id] => 1581
+    [form_id] => form_id
+    [user_id] => 5
+    [user_ip] => 127.0.0.1
+    [user_device] => Mozilla Firefox/Mac OS
+    [date_created] => September 10, 2025
+    [time_created] => 6:47 pm
+    [first_name] => Tim
+    [last_name] => Gutowski
+    [email] => local-2@tg.com
+    [postal_code] => 60201
+    [phone] => 414-392-2826
+    [custom] => Array
+        (
+            [ofs-join_affiliate_local] => 1234
+            [ofs-join_employer] => cars.com
+            [ofs-join_employer_city] => Chicago
+            [ofs-join_employer_state] => IL
+        )
+
+)
+
+[2025-09-10 18:47:36] Using AN endpoint: https://actionnetwork.org/api/v2/forms/d1aabbb6-3369-4349-a34b-d96e89fe7a1b/submissions
+[2025-09-10 18:47:36] Sending to AN: {"person":{"family_name":"Gutowski","given_name":"Tim","postal_addresses":[{"postal_code":"60201"}],"email_addresses":[{"address":"local-2@tg.com"}],"phone_numbers":[{"number":"414-392-2826"}],"custom_fields":{"ofs-join_affiliate_local":"1234","ofs-join_employer":"cars.com","ofs-join_employer_city":"Chicago","ofs-join_employer_state":"IL"}},"add_tags":[]}
+[2025-09-10 18:47:37] AN response (200): {}
