@@ -5,6 +5,12 @@ All notable changes to the Kadence Action Network Integration plugin will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2.1] - 2025-09-10
+
+### Added
+- **Enhanced Webhook Debugging**: Comprehensive logging to diagnose webhook submission issues
+- **Request Analysis**: Detailed logging of JSON params, body params, headers, and raw request data
+
 ## [1.1.2] - 2025-09-10
 
 ### Added

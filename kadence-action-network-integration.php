@@ -2,7 +2,7 @@
 /*
 Plugin Name: Kadence Action Network Integration
 Description: Sends Kadence Blocks Pro form submissions to Action Network via their REST API with advanced validation capabilities.
-Version: 1.1.2
+Version: 1.1.2.1
 Author: Tim Gutowski
 License: GPL v2 or later
 Text Domain: kadence-action-network
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 // Define plugin constants
 define( 'KADENCE_AN_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'KADENCE_AN_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-defined( 'KADENCE_AN_VERSION' ) or define( 'KADENCE_AN_VERSION', '1.1.2' );
+defined( 'KADENCE_AN_VERSION' ) or define( 'KADENCE_AN_VERSION', '1.1.2.1' );
 define( 'KADENCE_AN_GITHUB_REPO', 'timgut/kadence-action-network' );
 
 // Simple GitHub Update Checker Class
@@ -552,6 +552,8 @@ function kadence_an_handle_form_submission( $request ) {
     kadence_an_log('Request method: ' . $request->get_method());
     kadence_an_log('Request headers: ' . print_r($request->get_headers(), true));
     kadence_an_log('Request body: ' . $request->get_body());
+    kadence_an_log('JSON params: ' . print_r($request->get_json_params(), true));
+    kadence_an_log('Body params: ' . print_r($request->get_body_params(), true));
     
     $params = $request->get_json_params();
     if ( empty( $params ) ) {
