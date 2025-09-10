@@ -2,7 +2,7 @@
 /*
 Plugin Name: Kadence Action Network Integration
 Description: Sends Kadence Blocks Pro form submissions to Action Network via their REST API with advanced validation capabilities.
-Version: 1.0.0
+Version: 1.1.0
 Author: Tim Gutowski
 License: GPL v2 or later
 Text Domain: kadence-action-network
@@ -14,7 +14,124 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 // Define plugin constants
 define( 'KADENCE_AN_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'KADENCE_AN_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-defined( 'KADENCE_AN_VERSION' ) or define( 'KADENCE_AN_VERSION', '1.0.0' );
+defined( 'KADENCE_AN_VERSION' ) or define( 'KADENCE_AN_VERSION', '1.1.0' );
+define( 'KADENCE_AN_GITHUB_REPO', 'your-username/kadence-action-network-integration' ); // Replace with your actual GitHub repo
+
+// Simple GitHub Update Checker Class
+class Kadence_AN_GitHub_Updater {
+    private $plugin_file;
+    private $github_repo;
+    private $current_version;
+    
+    public function __construct( $plugin_file, $github_repo, $current_version ) {
+        $this->plugin_file = $plugin_file;
+        $this->github_repo = $github_repo;
+        $this->current_version = $current_version;
+        
+        add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_updates' ) );
+        add_filter( 'plugins_api', array( $this, 'plugin_info' ), 10, 3 );
+    }
+    
+    public function check_for_updates( $transient ) {
+        if ( empty( $transient->checked ) ) {
+            return $transient;
+        }
+        
+        $remote_version = $this->get_remote_version();
+        
+        if ( $remote_version && version_compare( $this->current_version, $remote_version, '<' ) ) {
+            $plugin_slug = plugin_basename( $this->plugin_file );
+            $transient->response[ $plugin_slug ] = (object) array(
+                'slug' => dirname( $plugin_slug ),
+                'plugin' => $plugin_slug,
+                'new_version' => $remote_version,
+                'url' => "https://github.com/{$this->github_repo}",
+                'package' => "https://github.com/{$this->github_repo}/archive/refs/heads/main.zip",
+                'icons' => array(),
+                'banners' => array(),
+                'banners_rtl' => array(),
+                'tested' => get_bloginfo( 'version' ),
+                'requires_php' => '7.4',
+                'compatibility' => new stdClass(),
+            );
+        }
+        
+        return $transient;
+    }
+    
+    public function plugin_info( $result, $action, $args ) {
+        if ( $action !== 'plugin_information' ) {
+            return $result;
+        }
+        
+        $plugin_slug = plugin_basename( $this->plugin_file );
+        
+        if ( $args->slug !== dirname( $plugin_slug ) ) {
+            return $result;
+        }
+        
+        $remote_version = $this->get_remote_version();
+        
+        if ( ! $remote_version ) {
+            return $result;
+        }
+        
+        $result = new stdClass();
+        $result->name = 'Kadence Action Network Integration';
+        $result->slug = dirname( $plugin_slug );
+        $result->version = $remote_version;
+        $result->tested = get_bloginfo( 'version' );
+        $result->requires = '5.0';
+        $result->requires_php = '7.4';
+        $result->last_updated = date( 'Y-m-d' );
+        $result->sections = array(
+            'description' => 'Sends Kadence Blocks Pro form submissions to Action Network via their REST API with advanced validation capabilities.',
+            'changelog' => 'See the changelog in the plugin files for detailed information about updates.',
+        );
+        $result->download_link = "https://github.com/{$this->github_repo}/archive/refs/heads/main.zip";
+        
+        return $result;
+    }
+    
+    private function get_remote_version() {
+        $cache_key = 'kadence_an_remote_version';
+        $cached_version = get_transient( $cache_key );
+        
+        if ( $cached_version !== false ) {
+            return $cached_version;
+        }
+        
+        $response = wp_remote_get( "https://api.github.com/repos/{$this->github_repo}/releases/latest", array(
+            'timeout' => 10,
+            'headers' => array(
+                'Accept' => 'application/vnd.github.v3+json',
+                'User-Agent' => 'WordPress Plugin Update Checker'
+            )
+        ) );
+        
+        if ( is_wp_error( $response ) ) {
+            return false;
+        }
+        
+        $body = wp_remote_retrieve_body( $response );
+        $data = json_decode( $body, true );
+        
+        if ( isset( $data['tag_name'] ) ) {
+            $version = ltrim( $data['tag_name'], 'v' );
+            set_transient( $cache_key, $version, HOUR_IN_SECONDS );
+            return $version;
+        }
+        
+        return false;
+    }
+}
+
+// Initialize the updater
+new Kadence_AN_GitHub_Updater( 
+    __FILE__, 
+    KADENCE_AN_GITHUB_REPO, 
+    KADENCE_AN_VERSION 
+);
 
 // Activation hook
 register_activation_hook( __FILE__, 'kadence_an_activate_plugin' );
