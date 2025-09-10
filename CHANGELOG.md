@@ -5,6 +5,12 @@ All notable changes to the Kadence Action Network Integration plugin will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2025-09-10
+
+### Added
+- **HTTP Basic Auth Support**: Added toggle settings in form meta box for development environments
+- **Development Mode**: Easy enable/disable HTTP Basic Auth for webhook requests
+
 ## [1.1.1] - 2025-09-10
 
 ### Fixed
