@@ -1,0 +1,44 @@
+# Log files
+kadence-an-log.txt
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# WordPress specific
+wp-config.php
+wp-content/uploads/
+wp-content/cache/
+wp-content/backup-db/
+wp-content/advanced-cache.php
+wp-content/wp-cache-config.php
+
+# Plugin specific
+*.zip
+node_modules/
+vendor/
+composer.lock
+package-lock.json
+yarn.lock
+
+# Backup files
+*.bak
+*.backup
+*_backup_*
