@@ -1,4 +1,4 @@
-h<?php
+<?php
 /*
 Plugin Name: Kadence Action Network Integration
 Description: Sends Kadence Blocks Pro form submissions to Action Network via their REST API with advanced validation capabilities.
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 define( 'KADENCE_AN_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'KADENCE_AN_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 defined( 'KADENCE_AN_VERSION' ) or define( 'KADENCE_AN_VERSION', '1.1.2' );
-//define( 'KADENCE_AN_GITHUB_REPO', 'your-username/kadence-action-network-integration' ); // Replace with your actual GitHub repo
+define( 'KADENCE_AN_GITHUB_REPO', 'timgut/kadence-action-network' );
 
 // Simple GitHub Update Checker Class
 class Kadence_AN_GitHub_Updater {
