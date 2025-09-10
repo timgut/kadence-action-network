@@ -49,9 +49,10 @@ A WordPress plugin that integrates Kadence Blocks Pro forms with Action Network'
 1. Edit any Kadence Advanced Form
 2. Scroll down to the "Action Network Integration" meta box
 3. Configure:
-   - **AN Endpoint URL**: Your Action Network form endpoint
+   - **AN Endpoint URL**: Your Action Network form endpoint (e.g., `https://actionnetwork.org/api/v2/forms/your-form-id`). The plugin will automatically append `/submissions` if not present.
    - **Tags**: Comma-separated tags for submissions
    - **Management URL**: Reference URL for administrative purposes
+4. In the "Webhook Configuration" section, copy the webhook URL for use in your Kadence form settings
 
 ### Validation Setup
 1. In the form's meta box, go to "Form Validation Settings"
@@ -93,11 +94,22 @@ Custom fields are automatically included in the `custom_fields` section.
 
 ## Webhook Configuration
 
-In your Kadence form settings:
+### In Your Kadence Form Settings:
 1. Add a "Webhook" action
-2. Set the URL to: `https://yoursite.com/wp-json/kadence-an/v1/submit`
+2. Set the URL to the webhook URL shown in the plugin's meta box
 3. Set the method to POST
 4. The plugin will automatically handle the submission
+
+### Cross-Environment Setup:
+The plugin provides both a full webhook URL and a domain-agnostic path:
+
+- **Full URL**: `https://yoursite.com/wp-json/kadence-an/v1/submit` (for current environment)
+- **Path**: `wp-json/kadence-an/v1/submit` (for other environments)
+
+When setting up webhooks in different environments (dev, staging, production), use the path and prepend your domain:
+- Development: `https://dev.yoursite.com/wp-json/kadence-an/v1/submit`
+- Staging: `https://staging.yoursite.com/wp-json/kadence-an/v1/submit`
+- Production: `https://yoursite.com/wp-json/kadence-an/v1/submit`
 
 ## Troubleshooting
 

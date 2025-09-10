@@ -28,6 +28,9 @@ if ( is_admin() ) {
     
     // Enqueue admin styles
     add_action('admin_enqueue_scripts', 'kadence_an_enqueue_admin_styles');
+    
+    // Add admin menu links
+    add_action('admin_menu', 'kadence_an_add_admin_menu_links');
 }
 
 function kadence_an_enqueue_admin_styles($hook) {
@@ -41,6 +44,17 @@ function kadence_an_enqueue_admin_styles($hook) {
             KADENCE_AN_VERSION
         );
     }
+}
+
+function kadence_an_add_admin_menu_links() {
+    // Only add the submenu item under Tools for easy access (no main sidebar menu)
+    add_management_page(
+        'Kadence AN Logs',
+        'Kadence AN Logs',
+        'manage_options',
+        'kadence-an-logs-tools',
+        'kadence_an_render_logs_page'
+    );
 }
 
 // Enqueue validation JavaScript
@@ -133,7 +147,8 @@ function kadence_an_render_settings_metabox($post) {
         <!-- Action Network Settings -->
         <h4>Action Network Configuration</h4>
         <p><label for="kadence_an_endpoint"><strong>AN Endpoint URL</strong></label><br />
-        <input type="text" name="kadence_an_endpoint" id="kadence_an_endpoint" value="<?php echo esc_attr($endpoint); ?>" style="width:100%" /></p>
+        <input type="text" name="kadence_an_endpoint" id="kadence_an_endpoint" value="<?php echo esc_attr($endpoint); ?>" style="width:100%" placeholder="https://actionnetwork.org/api/v2/forms/your-form-id" />
+        <span class="kadence-an-help-text">Enter the Action Network form endpoint URL. "/submissions" will be automatically appended if not present.</span></p>
         
         <p><label for="kadence_an_tags"><strong>Tags (comma-separated)</strong></label><br />
         <input type="text" name="kadence_an_tags" id="kadence_an_tags" value="<?php echo esc_attr($tags); ?>" style="width:100%" /></p>
@@ -141,9 +156,29 @@ function kadence_an_render_settings_metabox($post) {
         <p><label for="kadence_an_management_url"><strong>Action Network Form Management URL</strong></label><br />
         <input type="text" name="kadence_an_management_url" id="kadence_an_management_url" value="<?php echo esc_attr($management_url); ?>" style="width:100%" placeholder="https://actionnetwork.org/forms/your-form-id" />
         <span class="kadence-an-help-text">This URL is for administrative reference only and will not be used in API requests.</span></p>
+        
+        <p><a href="<?php echo admin_url('admin.php?page=kadence-an-logs'); ?>" class="button button-secondary" target="_blank">
+            <span class="dashicons dashicons-list-view" style="vertical-align: middle; margin-right: 5px;"></span>
+            View Form Logs
+        </a>
+        <span class="kadence-an-help-text">View submission logs and debug information for this form.</span></p>
     </div>
     
     <hr class="kadence-an-divider">
+    
+    <div class="kadence-an-meta-box">
+        <!-- Webhook Configuration -->
+        <h4>Webhook Configuration</h4>
+        <p class="kadence-an-help-text">Use this webhook URL in your Kadence form settings:</p>
+        
+        <p><label><strong>Full Webhook URL:</strong></label><br />
+        <input type="text" value="<?php echo esc_attr(kadence_an_get_webhook_url()); ?>" readonly style="width: 100%; background: #f9f9f9; font-family: monospace; font-size: 12px;" onclick="this.select();" />
+        <span class="kadence-an-help-text">Click to select and copy this URL for your current environment.</span></p>
+        
+        <p><label><strong>Webhook Path (domain-agnostic):</strong></label><br />
+        <input type="text" value="wp-json/kadence-an/v1/submit" readonly style="width: 100%; background: #f9f9f9; font-family: monospace; font-size: 12px;" onclick="this.select();" />
+        <span class="kadence-an-help-text">Use this path when setting up webhooks in other environments. Just prepend your domain.</span></p>
+    </div>
     
     <div class="kadence-an-meta-box">
         <!-- Validation Settings -->
@@ -323,6 +358,11 @@ function kadence_an_log($message) {
     }
 }
 
+// Helper function to get the webhook URL for the current site
+function kadence_an_get_webhook_url() {
+    return get_rest_url(null, 'kadence-an/v1/submit');
+}
+
 function kadence_an_handle_form_submission( $request ) {
     $params = $request->get_json_params();
     if ( empty( $params ) ) {
@@ -346,6 +386,11 @@ function kadence_an_handle_form_submission( $request ) {
     if (!$endpoint) {
         kadence_an_log('The form with ID ' . $form_id . ' does not have an endpoint, so data cannot be sent to AN.');
         return new WP_Error( 'no_endpoint', 'No Action Network endpoint configured for this form', array( 'status' => 400 ) );
+    }
+
+    // Automatically append "/submissions" to the endpoint if not already present
+    if (!str_ends_with($endpoint, '/submissions')) {
+        $endpoint = rtrim($endpoint, '/') . '/submissions';
     }
 
     // Get API key from WordPress options

@@ -5,7 +5,33 @@ All notable changes to the Kadence Action Network Integration plugin will be doc
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2024-01-XX
+## [1.1.0] - 2025-09-10
+
+### Added
+- **Admin Log Viewer**: Complete log viewing interface accessible from plugin settings
+- **Log Filtering**: Filter logs by text content and log level (error, warning, success, info)
+- **Log Management**: Clear logs and download log files directly from admin interface
+- **Pagination**: View 25, 50, or 100 log entries per page for better performance
+- **Smart Log Parsing**: Automatic detection of log levels and metadata extraction
+- **Color-coded Log Display**: Visual distinction between different log types
+- **Statistics Dashboard**: Overview of total entries and log statistics
+- **Enhanced Settings Page**: Professional layout with quick actions and help sections
+- **Contextual Navigation**: Easy access to logs from form meta boxes and settings page
+
+### Improved
+- **User Experience**: Logs accessible from plugin settings instead of main sidebar
+- **Admin Interface**: Cleaner, more organized settings page with helpful guidance
+- **Remote Server Support**: No more need for SSH/FTP access to view log files
+- **Debugging Workflow**: Streamlined process for monitoring form submissions and troubleshooting
+
+### Technical Details
+- AJAX-powered log loading for better performance
+- Responsive design for mobile and tablet compatibility
+- WordPress admin styling consistency
+- Secure nonce verification for all log management actions
+- Efficient log parsing with regex pattern matching
+
+## [1.0.0] - 2024-08-06
 
 ### Added
 - Initial release of Kadence Action Network Integration
