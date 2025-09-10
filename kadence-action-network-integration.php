@@ -252,6 +252,11 @@ function kadence_an_render_settings_metabox($post) {
     $validation_settings = get_post_meta($post->ID, '_kadence_an_validation_settings', true);
     $custom_validation = get_post_meta($post->ID, '_kadence_an_custom_validation', true);
     
+    // HTTP Basic Auth settings
+    $http_auth_enabled = get_post_meta($post->ID, '_kadence_an_http_auth_enabled', true);
+    $http_auth_username = get_post_meta($post->ID, '_kadence_an_http_auth_username', true);
+    $http_auth_password = get_post_meta($post->ID, '_kadence_an_http_auth_password', true);
+    
     // Default validation settings if empty
     if (empty($validation_settings)) {
         $validation_settings = array();
@@ -279,6 +284,24 @@ function kadence_an_render_settings_metabox($post) {
             View Form Logs
         </a>
         <span class="kadence-an-help-text">View submission logs and debug information for this form.</span></p>
+    </div>
+    
+    <hr class="kadence-an-divider">
+    
+    <div class="kadence-an-meta-box">
+        <!-- HTTP Basic Auth Settings -->
+        <h4>HTTP Basic Auth (Development Only)</h4>
+        <p class="kadence-an-help-text">Enable this only during development when HTTP Basic Auth is active. Disable when going live.</p>
+        
+        <p><label><input type="checkbox" name="kadence_an_http_auth_enabled" value="1" <?php checked($http_auth_enabled, '1'); ?> /> Enable HTTP Basic Auth for webhook requests</label></p>
+        
+        <div id="http-auth-settings" style="<?php echo $http_auth_enabled ? '' : 'display: none;'; ?>">
+            <p><label for="kadence_an_http_auth_username"><strong>Username</strong></label><br />
+            <input type="text" name="kadence_an_http_auth_username" id="kadence_an_http_auth_username" value="<?php echo esc_attr($http_auth_username); ?>" style="width:100%" placeholder="afscmedev" /></p>
+            
+            <p><label for="kadence_an_http_auth_password"><strong>Password</strong></label><br />
+            <input type="password" name="kadence_an_http_auth_password" id="kadence_an_http_auth_password" value="<?php echo esc_attr($http_auth_password); ?>" style="width:100%" placeholder="trilogy" /></p>
+        </div>
     </div>
     
     <hr class="kadence-an-divider">
@@ -366,6 +389,15 @@ function validateCustomField(value, fieldName) {
     jQuery(document).ready(function($) {
         var fieldIndex = <?php echo !empty($validation_settings) ? max(array_keys($validation_settings)) + 1 : 0; ?>;
         
+        // Toggle HTTP Auth settings visibility
+        $('input[name="kadence_an_http_auth_enabled"]').change(function() {
+            if ($(this).is(':checked')) {
+                $('#http-auth-settings').show();
+            } else {
+                $('#http-auth-settings').hide();
+            }
+        });
+        
         $('#add-validation-field').click(function() {
             var fieldHtml = '<div class="validation-field-row">' +
                 '<label><strong>Field Name:</strong></label><br>' +
@@ -442,6 +474,27 @@ add_action('save_post_kadence_form', function($post_id) {
         kadence_an_log('Saved management URL: ' . $management_url);
     }
     
+    // Save HTTP Basic Auth settings
+    if (isset($_POST['kadence_an_http_auth_enabled'])) {
+        update_post_meta($post_id, '_kadence_an_http_auth_enabled', '1');
+        kadence_an_log('HTTP Basic Auth enabled for form ' . $post_id);
+    } else {
+        update_post_meta($post_id, '_kadence_an_http_auth_enabled', '0');
+        kadence_an_log('HTTP Basic Auth disabled for form ' . $post_id);
+    }
+    
+    if (isset($_POST['kadence_an_http_auth_username'])) {
+        $username = sanitize_text_field($_POST['kadence_an_http_auth_username']);
+        update_post_meta($post_id, '_kadence_an_http_auth_username', $username);
+        kadence_an_log('Saved HTTP Auth username: ' . $username);
+    }
+    
+    if (isset($_POST['kadence_an_http_auth_password'])) {
+        $password = sanitize_text_field($_POST['kadence_an_http_auth_password']);
+        update_post_meta($post_id, '_kadence_an_http_auth_password', $password);
+        kadence_an_log('Saved HTTP Auth password');
+    }
+    
     // Save validation settings
     if (isset($_POST['validation_settings']) && is_array($_POST['validation_settings'])) {
         $validation_settings = array();
@@ -494,10 +547,17 @@ function kadence_an_get_webhook_url() {
 }
 
 function kadence_an_handle_form_submission( $request ) {
+    // Log that the webhook was hit
+    kadence_an_log('=== WEBHOOK HIT ===');
+    kadence_an_log('Request method: ' . $request->get_method());
+    kadence_an_log('Request headers: ' . print_r($request->get_headers(), true));
+    kadence_an_log('Request body: ' . $request->get_body());
+    
     $params = $request->get_json_params();
     if ( empty( $params ) ) {
         // Try to get params from form data (application/x-www-form-urlencoded or multipart/form-data)
         $params = $request->get_body_params();
+        kadence_an_log('Using body params instead of JSON params');
     }
     if ( empty( $params ) ) {
         kadence_an_log('No data received in submission.');
