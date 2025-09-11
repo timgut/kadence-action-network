@@ -2,7 +2,7 @@
 /*
 Plugin Name: Kadence Action Network Integration
 Description: Sends Kadence Blocks Pro form submissions to Action Network via their REST API with advanced validation capabilities.
-Version: 1.1.2.1
+Version: 1.1.2.2
 Author: Tim Gutowski
 License: GPL v2 or later
 Text Domain: kadence-action-network
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 // Define plugin constants
 define( 'KADENCE_AN_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'KADENCE_AN_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-defined( 'KADENCE_AN_VERSION' ) or define( 'KADENCE_AN_VERSION', '1.1.2.1' );
+defined( 'KADENCE_AN_VERSION' ) or define( 'KADENCE_AN_VERSION', '1.1.2.2' );
 define( 'KADENCE_AN_GITHUB_REPO', 'timgut/kadence-action-network' );
 
 // Simple GitHub Update Checker Class
@@ -626,8 +626,18 @@ function kadence_an_handle_form_submission( $request ) {
         'given_name' => $first_name,
         'postal_addresses' => array(array('postal_code' => $postal_code)),
         'email_addresses' => array(array('address' => $email)),
-        'phone_numbers' => array(array('number' => $phone)),
     );
+    
+    // Add phone number with mobile opt-in if phone number exists
+    if (!empty($phone)) {
+        $person['phone_numbers'] = array(array(
+            'primary' => true,
+            'number' => $phone,
+            'number_type' => 'Mobile',
+            'status' => 'subscribed'
+        ));
+        kadence_an_log('Mobile opt-in enabled for phone number: ' . $phone);
+    }
     if (!empty($custom_fields)) {
         $person['custom_fields'] = $custom_fields;
     }
